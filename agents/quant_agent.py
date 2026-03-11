@@ -4,6 +4,8 @@ from core.protocol import AgentConfig
 from tools.order_book import OrderBookAnalyzer
 
 class QuantAgent(FinancialAgent):
+    """Momentum + Order Flow (AGGRESSIVE)"""
+    
     def __init__(self, config):
         super().__init__(FinancialAgentRole.GHOST, config)
         self.order_book = OrderBookAnalyzer()
@@ -13,10 +15,21 @@ class QuantAgent(FinancialAgent):
         book = self.order_book.get_order_book_depth()
         ratio = book["pressure_ratio"]
         
-        # Multi-strategy: Price + Order Flow
-        if btc_price > 70000 and ratio > 1.2:
-            return TradeSignal(agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="BUY", quantity=0.015, confidence=0.85, reasoning=f"MOMENTUM: ${btc_price:,.0f} + BUY pressure {ratio:.2f}x")
-        elif btc_price < 68000 or ratio < 0.8:
-            return TradeSignal(agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="SELL", quantity=0.01, confidence=0.80, reasoning=f"WEAKNESS: ${btc_price:,.0f} + SELL pressure {ratio:.2f}x")
+        # AGGRESSIVE: 0.8x and 1.1x thresholds (was 0.8x and 1.2x)
+        if btc_price > 69500 and ratio > 1.1:  # LOWERED
+            return TradeSignal(
+                agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD",
+                action="BUY", quantity=0.018, confidence=0.85,
+                reasoning=f"MOMENTUM: ${btc_price:,.0f} + BUY pressure {ratio:.2f}x"
+            )
+        elif btc_price < 68500 or ratio < 0.85:  # RAISED (more sensitive)
+            return TradeSignal(
+                agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD",
+                action="SELL", quantity=0.012, confidence=0.80,
+                reasoning=f"WEAKNESS: ${btc_price:,.0f} + pressure {ratio:.2f}x"
+            )
         
-        return TradeSignal(agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="HOLD", quantity=0, confidence=0.6, reasoning="Neutral")
+        return TradeSignal(
+            agent_id="quant", exchange=ExchangeType.COINBASE, symbol="BTC/USD",
+            action="HOLD", quantity=0, confidence=0.55, reasoning="Neutral"
+        )
