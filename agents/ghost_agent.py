@@ -1,34 +1,26 @@
 from agents.financial_agent import FinancialAgent
 from core.financial_protocol import FinancialAgentRole, TradeSignal, ExchangeType
-from core.protocol import AgentConfig, Message
-from tools.multi_exchange import MultiExchange
+from core.protocol import AgentConfig
+import ccxt
+import time
 
 class GhostAgent(FinancialAgent):
-    """The Ghost - Real Arbitrage Hunter across multiple exchanges"""
-    
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config):
         super().__init__(FinancialAgentRole.GHOST, config)
-        self.multi_exchange = MultiExchange()
+        self.exchanges = {
+            "coinbase": ccxt.coinbase({"enableRateLimit": True}),
+            "kraken": ccxt.kraken({"enableRateLimit": True})
+        }
     
-    async def find_arbitrage(self, ticker_data: dict) -> TradeSignal:
-        # Get real arbitrage opportunity
-        arb = self.multi_exchange.find_arbitrage("BTC/USDT")
+    async def find_arbitrage(self, market_data):
+        try:
+            cb = self.exchanges["coinbase"].fetch_ticker("BTC/USD")["last"]
+            kr = self.exchanges["kraken"].fetch_ticker("BTC/USD")["last"]
+            spread = (abs(cb - kr) / cb) * 100
+            
+            if spread > 0.5:
+                return TradeSignal(agent_id="ghost", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="BUY" if cb < kr else "SELL", quantity=0.01, confidence=0.75, reasoning=f"ARB: {spread:.2f}%")
+        except:
+            pass
         
-        if arb['opportunity']:
-            reasoning = f"ARBITRAGE: Buy {arb['buy_exchange']} ${arb['buy_price']:,.0f}, Sell {arb['sell_exchange']} ${arb['sell_price']:,.0f}, Net: {arb['net_profit_percent']:.2f}%"
-            action = "BUY"
-            confidence = min(0.95, arb['net_profit_percent'] / 2)  # Higher profit = higher confidence
-        else:
-            reasoning = f"No arbitrage: Spread {arb.get('spread_percent', 0):.2f}% < 0.76% fees"
-            action = "HOLD"
-            confidence = 0.5
-        
-        return TradeSignal(
-            agent_id=self.config.agent_id,
-            exchange=ExchangeType.COINBASE,
-            symbol=ticker_data['symbol'],
-            action=action,
-            quantity=0.01,
-            confidence=confidence,
-            reasoning=reasoning
-        )
+        return TradeSignal(agent_id="ghost", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="HOLD", quantity=0, confidence=0.5, reasoning="No arb")

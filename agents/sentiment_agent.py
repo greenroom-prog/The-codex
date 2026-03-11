@@ -5,29 +5,17 @@ from tools.twitter_sentiment import TwitterSentiment
 from tools.whale_tracker import WhaleTracker
 
 class SentimentAgent(FinancialAgent):
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config):
         super().__init__(FinancialAgentRole.GHOST, config)
         self.twitter = TwitterSentiment()
         self.whales = WhaleTracker()
     
-    async def analyze_with_sentiment(self, market_data: dict) -> TradeSignal:
-        twitter_data = self.twitter.analyze_sentiment()
-        whale_data = self.whales.analyze_whale_activity()
-        twitter_score = twitter_data['score']
-        whale_signal = whale_data['signal']
+    async def analyze_with_sentiment(self, market_data):
+        tw = self.twitter.analyze_sentiment()
+        wh = self.whales.analyze_whale_activity()
         
-        # LOWERED thresholds from 0.2 to 0.05
-        if twitter_score > 0.05 and whale_signal == 'WHALE_ACCUMULATION':
-            action = "BUY"
-            confidence = 0.65
-            reasoning = f"BULLISH: Twitter {twitter_data['bullish_pct']:.0f}% + Whales {whale_data['total_btc_moved']:.0f} BTC"
-        elif twitter_score < -0.05 and whale_signal == 'HIGH_VOLATILITY':
-            action = "SELL"
-            confidence = 0.60
-            reasoning = f"BEARISH: Twitter {twitter_data['bearish_pct']:.0f}% + {whale_data['whale_count']} whales"
-        else:
-            action = "HOLD"
-            confidence = 0.5
-            reasoning = f"NEUTRAL: Twitter {twitter_data['sentiment']}, Whales {whale_signal}"
-        
-        return TradeSignal(agent_id="sentiment", exchange=ExchangeType.COINBASE, symbol=market_data['symbol'], action=action, quantity=0.01, confidence=confidence, reasoning=reasoning)
+        if tw["score"] > 0.1 and wh["signal"] == "WHALE_ACCUMULATION":
+            return TradeSignal(agent_id="sentiment", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="BUY", quantity=0.02, confidence=0.80, reasoning=f"BULLISH: Twitter {tw["bullish_pct"]:.0f}% + Whales {wh["total_btc_moved"]:.0f}BTC")
+        elif tw["score"] < -0.1:
+            return TradeSignal(agent_id="sentiment", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="SELL", quantity=0.01, confidence=0.70, reasoning=f"BEARISH: Twitter {tw["bearish_pct"]:.0f}%")
+        return TradeSignal(agent_id="sentiment", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="HOLD", quantity=0, confidence=0.5, reasoning="Neutral")

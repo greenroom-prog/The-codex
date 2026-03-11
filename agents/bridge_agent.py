@@ -4,28 +4,17 @@ from core.protocol import AgentConfig
 from tools.cross_chain import CrossChainMonitor
 
 class BridgeAgent(FinancialAgent):
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config):
         super().__init__(FinancialAgentRole.GHOST, config)
-        self.cross_chain = CrossChainMonitor()
+        self.cross = CrossChainMonitor()
     
-    async def find_cross_chain_arb(self, market_data: dict) -> TradeSignal:
-        arb = self.cross_chain.find_cross_chain_arbitrage()
+    async def find_cross_chain_arb(self, market_data):
+        try:
+            result = self.cross.find_cross_chain_arbitrage()
+            
+            if result.get("has_arbitrage") and result.get("spread_bps", 0) > 10:
+                return TradeSignal(agent_id="bridge", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="BUY", quantity=0.018, confidence=0.82, reasoning=f"CROSS-CHAIN: {result.get("spread_bps", 0):.1f}bps")
+        except:
+            pass
         
-        if arb['opportunity']:
-            reasoning = f"CROSS-CHAIN: {arb['buy_chain']}->{arb['sell_chain']} {arb['net_profit_bps']:.1f}bps"
-            action = "BUY"
-            confidence = 0.8
-        else:
-            reasoning = f"No arb: {arb['spread_bps']:.1f}bps"
-            action = "HOLD"
-            confidence = 0.3
-        
-        return TradeSignal(
-            agent_id="bridge",
-            exchange=ExchangeType.COINBASE,
-            symbol=market_data['symbol'],
-            action=action,
-            quantity=0.01,
-            confidence=confidence,
-            reasoning=reasoning
-        )
+        return TradeSignal(agent_id="bridge", exchange=ExchangeType.COINBASE, symbol="BTC/USD", action="HOLD", quantity=0, confidence=0.5, reasoning="No arb")
