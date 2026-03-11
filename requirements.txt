@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+litellm
+anthropic
+openai
+redis
+httpx
+docker
+python-dotenv
+rich
+typer

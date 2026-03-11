@@ -1,0 +1,6 @@
+.env
+*.log
+__pycache__/
+*.pyc
+atlas_trades.db
+nohup.out
