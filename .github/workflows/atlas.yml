@@ -27,3 +27,4 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
         run: python3 atlas_live.py
+# Force rebuild
