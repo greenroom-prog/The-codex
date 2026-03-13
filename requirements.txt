@@ -199,3 +199,4 @@ wheel==0.42.0
 yarl==1.23.0
 zipp==3.23.0
 zope.interface==6.1
+litellm==1.82.0
