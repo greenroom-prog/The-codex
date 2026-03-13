@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-03-11T23:33:56.708753",
+  "engines": {
+    "intelligence": {
+      "summary": "No policy signals",
+      "signals": 0
+    },
+    "funding": {
+      "opportunities": 4
+    },
+    "data": {
+      "summary": "Found 2 lender mentions, 5 tactics"
+    },
+    "venture": {
+      "summary": "1 active ventures, 3 future opportunities",
+      "top_venture": "credit_consulting"
+    },
+    "atlas": {
+      "status": "ACTIVE",
+      "total_trades": 46,
+      "total_pnl": -2.81,
+      "current_capital": 8961.2,
+      "agents": 6
+    }
+  }
+}

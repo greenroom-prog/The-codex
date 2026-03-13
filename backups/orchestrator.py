@@ -37,55 +37,41 @@ class Orchestrator:
         
         signals = [g, q, v, s, b, p]
         
-        # BALANCED LOGIC: Need 3 votes (not 2)
+        # AGGRESSIVE LOGIC: Just 2 votes needed (down from 3)
         buy_votes = sum(1 for sig in signals if sig.action == "BUY")
         sell_votes = sum(1 for sig in signals if sig.action == "SELL")
         
-        # BOTH buy AND sell overrides
-        prophet_buy_override = p.action == "BUY" and p.confidence > 0.8
-        prophet_sell_override = p.action == "SELL" and p.confidence > 0.8
-        quant_buy_override = q.action == "BUY" and q.confidence > 0.9
-        quant_sell_override = q.action == "SELL" and q.confidence > 0.9
+        # Individual agent overrides (high conviction = instant action)
+        prophet_override = p.action == "BUY" and p.confidence > 0.7
+        quant_override = q.action == "BUY" and q.confidence > 0.8
         
         print(f"\n🗳️  VOTES: {buy_votes} BUY | {sell_votes} SELL")
         
-        # SELL OVERRIDES FIRST (protect profits)
-        if prophet_sell_override and self.paper_trader.btc_position > 0:
-            result = self.paper_trader.execute_trade("SELL", market_data['price'])
-            print(f"\n💎 PROPHET SELL OVERRIDE: {p.reasoning[:60]}...")
-            print(f"   💵 P&L: ${result['pnl']:+,.2f}")
+        # EXECUTE AGGRESSIVELY
+        if prophet_override:
+            print(f"\n💎 PROPHET OVERRIDE: {p.reasoning[:60]}...")
+            result = self.paper_trader.execute_trade("BUY", market_data['price'], quantity=0.02)
+            print(f"   📝 BOUGHT 0.02 BTC @ ${market_data['price']:,.2f}")
         
-        elif quant_sell_override and self.paper_trader.btc_position > 0:
-            result = self.paper_trader.execute_trade("SELL", market_data['price'])
-            print(f"\n💎 QUANT SELL OVERRIDE: {q.reasoning[:60]}...")
-            print(f"   💵 P&L: ${result['pnl']:+,.2f}")
-        
-        # BUY OVERRIDES
-        elif prophet_buy_override:
-            result = self.paper_trader.execute_trade("BUY", market_data['price'], quantity=0.015)
-            print(f"\n💎 PROPHET BUY OVERRIDE: {p.reasoning[:60]}...")
-            print(f"   💰 ${result['capital']:,.2f} remaining")
-        
-        # CONSENSUS VOTES (need 3, not 2)
-        elif buy_votes >= 3:
+        elif buy_votes >= 2:  # LOWERED from 3 to 2
             result = self.paper_trader.execute_trade("BUY", market_data['price'], quantity=0.015)
             print(f"\n📝 CONSENSUS BUY: 0.015 BTC @ ${market_data['price']:,.2f}")
             print(f"   💰 ${result['capital']:,.2f} remaining")
         
-        elif sell_votes >= 3 and self.paper_trader.btc_position > 0:
+        elif sell_votes >= 2 and self.paper_trader.btc_position > 0:  # LOWERED from 3 to 2
             result = self.paper_trader.execute_trade("SELL", market_data['price'])
             print(f"\n📝 CONSENSUS SELL: {result['btc_position']:.4f} BTC @ ${market_data['price']:,.2f}")
             print(f"   💵 P&L: ${result['pnl']:+,.2f}")
             print(f"   💰 ${result['capital']:,.2f} total")
         
-        # Vault profit taking: If up 0.4%+ on position, SELL
+        # Quick profit taking: If up 1%+ on position, SELL
         if self.paper_trader.btc_position > 0 and self.paper_trader.trades:
             last_buy = [t for t in self.paper_trader.trades if t['action'] == 'BUY'][-1]
             gain_pct = ((market_data['price'] - last_buy['btc_price']) / last_buy['btc_price']) * 100
             
-            if gain_pct >= 0.4:
+            if gain_pct > 1.0:  # 1% profit = TAKE IT
                 result = self.paper_trader.execute_trade("SELL", market_data['price'])
-                print(f"\n💰 VAULT PROFIT TAKING: +{gain_pct:.2f}% gain = ${result['pnl']:,.2f}")
+                print(f"\n💰 PROFIT TAKING: +{gain_pct:.1f}% gain = ${result['pnl']:,.2f}")
         
         # Performance
         perf = self.paper_trader.get_performance()

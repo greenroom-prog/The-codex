@@ -27,7 +27,7 @@ class VaultAgent(FinancialAgent):
                 profit_pct = ((btc_price - avg_entry) / avg_entry) * 100
                 
                 # AUTO-SELL at 0.5% profit (LOWERED from 0.8%)
-                if profit_pct > 0.4:
+                if profit_pct > 0.5:
                     conn.close()
                     return TradeSignal(
                         agent_id="vault", exchange=ExchangeType.COINBASE, symbol="BTC/USD",

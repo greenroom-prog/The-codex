@@ -41,14 +41,14 @@ async def main():
             logger.log_cycle(btc_price, 10000, consensus)
             logger.log_signals(signals, btc_price, consensus)
             
-            print(f"Waiting 120 seconds...")
-            await asyncio.sleep(120)
+            print(f"Waiting 900 seconds...")
+            await asyncio.sleep(900)
             
         except KeyboardInterrupt:
             break
         except Exception as e:
             print(f"Error: {e}")
-            await asyncio.sleep(120)
+            await asyncio.sleep(900)
 
 if __name__ == "__main__":
     asyncio.run(main())
