@@ -1,29 +1,21 @@
-name: Atlas Trading Bot
+name: Atlas Bot
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
-  atlas-trade:
+  run-atlas:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
     
     steps:
       - uses: actions/checkout@v3
-      
       - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
       
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install litellm anthropic cdp-sdk python-dotenv requests aiohttp pydantic ccxt
+      - run: pip install litellm anthropic cdp-sdk python-dotenv requests aiohttp pydantic ccxt
       
-      - name: Run Atlas
+      - run: python3 atlas_live.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
-        run: python3 atlas_live.py
