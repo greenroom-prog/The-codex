@@ -19,7 +19,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install litellm anthropic cdp-sdk python-dotenv requests aiohttp pydantic
       
       - name: Run Atlas
         env:
