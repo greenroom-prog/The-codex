@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: '3.12'
       
-      - run: pip install litellm anthropic cdp-sdk python-dotenv requests aiohttp pydantic ccxt
+      - run: pip install litellm anthropic cdp-sdk python-dotenv requests aiohttp pydantic ccxt tweepy
       
       - run: python3 atlas_live.py
         env:
